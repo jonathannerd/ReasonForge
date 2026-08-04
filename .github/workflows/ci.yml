@@ -1,0 +1,51 @@
+name: CPU validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install CPU-only validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --no-deps -e .
+          python -m pip install \
+            nbformat==5.10.4 \
+            pydantic==2.11.9 \
+            pytest==8.4.2 \
+            PyYAML==6.0.2 \
+            ruff==0.13.1 \
+            sympy==1.14.0
+
+      - name: Unit tests
+        run: pytest -q
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Ruff formatting
+        run: ruff format --check .
+
+      - name: Validate Colab notebook
+        run: |
+          python - <<'PY'
+          import nbformat
+
+          notebook = nbformat.read("notebooks/ReasonForge_Colab.ipynb", as_version=4)
+          nbformat.validate(notebook)
+          PY

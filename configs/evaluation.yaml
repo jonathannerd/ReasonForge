@@ -1,0 +1,26 @@
+seed: 42
+
+model:
+  id: Qwen/Qwen2.5-0.5B-Instruct
+
+dataset:
+  name: openai/gsm8k
+  validation_fraction: 0.10
+  train_size: 512
+  validation_size: 128
+  test_size: 128
+
+evaluation:
+  adapter_path: outputs/reasonforge-adapter
+  output_dir: results/latest
+  max_new_tokens: 256
+  temperature: 0.0
+  top_p: 0.95
+
+rewards:
+  schema: 1.0
+  answer_correctness: 5.0
+  calculation_validity: 2.0
+  final_consistency: 1.5
+  conciseness: 0.5
+  suspicious_penalty: -1.0

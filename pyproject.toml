@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "reasonforge"
+version = "0.1.0"
+description = "A GRPO and LoRA sandbox for verifiable structured math responses"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+license = { file = "LICENSE" }
+authors = [{ name = "ReasonForge contributors" }]
+dependencies = [
+  "accelerate==1.10.1",
+  "datasets==4.5.0",
+  "gradio==5.47.2",
+  "matplotlib==3.10.6",
+  "pandas==2.3.2",
+  "peft==0.17.1",
+  "pydantic==2.11.9",
+  "PyYAML==6.0.2",
+  "seaborn==0.13.2",
+  "sympy==1.14.0",
+  "torch==2.8.0",
+  "transformers==4.57.6",
+  "trl==0.24.0",
+]
+
+[project.optional-dependencies]
+gpu = ["bitsandbytes==0.47.0"]
+dev = [
+  "nbformat==5.10.4",
+  "pytest==8.4.2",
+  "pytest-cov==6.2.1",
+  "ruff==0.13.1",
+]
+
+[project.scripts]
+reasonforge-dataset = "reasonforge.dataset:main"
+reasonforge-train = "reasonforge.train:main"
+reasonforge-evaluate = "reasonforge.evaluate:main"
+reasonforge-app = "reasonforge.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reasonforge"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
