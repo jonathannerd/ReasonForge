@@ -1,6 +1,6 @@
 # ReasonForge
 
-> **Status: Ready for first GPU training run.** All 42 CPU-safe engineering tests and release checks pass. GPU training and base-versus-adapter model evaluation are pending; no performance metrics are claimed yet.
+> **Status: First GPU run complete (August 4, 2026).** A 100-step GRPO/LoRA run finished on a Tesla T4 and was evaluated against the base model on 32 paired held-out GSM8K examples. Both models scored 0/32 answer accuracy, so no accuracy improvement is claimed. All 42 CPU-safe engineering tests and release checks pass.
 
 ReasonForge is a small-model reinforcement-learning sandbox for a deliberately narrow claim: can GRPO post-training make a 0.5B instruction model produce concise, machine-verifiable arithmetic solutions more reliably? It trains `Qwen/Qwen2.5-0.5B-Instruct` with LoRA on GSM8K prompts and rewards structured JSON, exact arithmetic, reference-answer correctness, and consistency between the final calculation and answer.
 
@@ -116,7 +116,7 @@ The Qwen LoRA adapter targets `q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj
 
 ### Google Colab
 
-Open [`notebooks/ReasonForge_Colab.ipynb`](notebooks/ReasonForge_Colab.ipynb) in a T4 GPU runtime. Set `REPO_URL` in the setup cell after publishing this repository, or upload/open the project at `/content/ReasonForge`. Run the installation, data, and smoke-test cells first. The notebook labels costly training and evaluation cells, provides a three-step demonstration configuration, keeps the 100-step meaningful configuration, launches Gradio, and optionally copies artifacts to Google Drive.
+Open [`notebooks/ReasonForge_Colab.ipynb`](notebooks/ReasonForge_Colab.ipynb) in a T4 GPU runtime. It clones this repository by default; change `REPO_URL` only when running a fork, or upload/open the project at `/content/ReasonForge`. Run the installation, data, and smoke-test cells first. The installation cell removes Colab's unused `torchvision`/`torchaudio` wheels when they conflict with the pinned text-only training stack. The notebook labels costly training and evaluation cells, provides a three-step demonstration configuration, keeps the 100-step exploratory configuration, launches Gradio, and optionally copies artifacts to Google Drive.
 
 A T4 is the target, not a guarantee: available VRAM and Colab's preinstalled CUDA stack vary. Use `--fallback`, fewer examples, or a shorter completion length if the runtime runs out of memory.
 
@@ -145,11 +145,22 @@ python scripts/update_readme_results.py --metrics results/latest/aggregate_metri
 
 ### Generated results
 
-No training or full model evaluation has been run in this repository yet. The placeholder is intentionally non-numeric.
+The first full run used the checked-in training configuration: seed 42, 512 GSM8K training prompts, 128 validation prompts, four sampled completions per group, 100 optimizer steps, LoRA rank 16, FP16, gradient checkpointing, and paged AdamW 8-bit. It completed on a Tesla T4 (15,360 MiB) in 1,395.7 seconds. Mean training loss was 0.09177; all 100 logged losses were finite. Gradient norm was finite for 99/100 steps: step 10 logged `NaN`, after which the run recovered and completed 90 further finite-gradient steps. This isolated anomaly is preserved in the trainer state and prevents an all-finite training claim.
+
+The paired evaluation used 32 examples selected deterministically from the untouched official GSM8K test split, seed 42, greedy decoding, and a 192-token completion cap. The same rows and settings were used for the untouched base model and the base model plus the saved adapter.
 
 <!-- RESULTS:START -->
-_Run the evaluation command with `--update-readme` to replace this placeholder with real measurements._
+| Model | Accuracy | Valid JSON | Schema | Calc validity | Consistency | Avg reward |
+|---|---:|---:|---:|---:|---:|---:|
+| aligned | 0.0% | 75.0% | 40.6% | 6.2% | 6.2% | 0.727 |
+| base | 0.0% | 6.2% | 3.1% | 0.0% | 0.0% | 0.047 |
 <!-- RESULTS:END -->
+
+The adapter substantially improved JSON formatting, schema compliance, average verifier reward, and concision (mean response length fell from 612.3 to 336.7 characters), but it did **not** improve answer accuracy: both conditions were 0/32. More aligned outputs were parseable, so the verifier could classify more of their downstream calculation, consistency, and wrong-answer failures; those larger classified-failure counts should not be interpreted independently as regressions.
+
+![Base-versus-aligned measured comparison](results/first-gpu-run/comparison.png)
+
+The complete measured record is in [`results/first-gpu-run/`](results/first-gpu-run/): paired row-level outputs, aggregate metrics, representative failures, plot, exact training and evaluation YAML, hardware and library metadata, artifact manifest, and the 100-step trainer state. Adapter/model weights are intentionally excluded. One representative aligned response was valid JSON with a fully verified arithmetic trace and a consistent final answer, yet answered the word problem incorrectly; this is a concrete example of why arithmetic self-consistency is not equivalent to correct problem interpretation.
 
 ## Interactive comparison
 
@@ -174,7 +185,7 @@ python -m reasonforge.app --help
 python -c "import nbformat; nbformat.validate(nbformat.read('notebooks/ReasonForge_Colab.ipynb', 4))"
 ```
 
-The GitHub Actions workflow installs only the verifier's CPU test dependencies, not PyTorch, Transformers, model weights, or GSM8K.
+The GitHub Actions workflow installs only the verifier's CPU test dependencies, not PyTorch, Transformers, model weights, or GSM8K. Release validation completed on August 4, 2026: 42 tests passed; Ruff lint and formatting passed; the Colab notebook validated; all four CLI entry points loaded; offline imports passed; the source distribution and wheel built; `git diff --check` passed; and the CPU validation workflow completed successfully.
 
 ## Project structure
 
@@ -183,7 +194,8 @@ configs/                 Training and evaluation YAML
 notebooks/               End-to-end Colab workflow
 src/reasonforge/         Dataset, verifier, rewards, training, evaluation, and app
 tests/                   CPU-only unit and adversarial tests
-results/                 Generated evaluation artifacts (ignored by Git)
+results/first-gpu-run/   Tracked measurements and metadata from the first T4 run
+results/                 Other generated evaluation artifacts (ignored by Git)
 pyproject.toml            Package metadata, pins, lint/test configuration
 requirements-colab.txt   Colab dependency lock
 ```
@@ -193,12 +205,15 @@ requirements-colab.txt   Colab dependency lock
 - GSM8K final answers are scalar numeric values. Equations with free symbols, geometry, units requiring conversion logic, matrices, and arbitrary functions are out of scope.
 - A valid calculation trace is evidence that the displayed arithmetic is self-consistent; it is not proof of the model's causal or hidden reasoning process.
 - Reward functions are specifications and can have blind spots. Adversarial tests reduce obvious reward hacking but do not prove robustness.
+- The first paired evaluation measured 0/32 answer accuracy for both models. Its formatting gains are useful engineering evidence, not a mathematical-performance improvement.
+- The first run used one seed and one small 32-example evaluation subset, without confidence intervals. It is exploratory and too small for broad statistical claims.
+- One of 100 logged gradient norms was `NaN` at step 10, although the loss stayed finite and the next 90 gradient norms were finite. Future runs should add explicit non-finite-gradient monitoring and compare optimizer/precision settings.
 - Small subset experiments have high variance. Report seeds, sample counts, confidence intervals, decoding settings, and failed runs before drawing performance conclusions.
 - Training on a benchmark can overfit its style. The held-out split prevents direct row leakage, not distributional contamination inherited from pretraining.
 - Generated text remains untrusted. Do not broaden the verifier by adding general code execution.
 - Arithmetic accuracy is not a basis for high-stakes financial, medical, legal, or safety decisions.
 
-Future work includes equation-solving via an explicit symbolic schema, additional independently held-out datasets, confidence intervals and bootstrap comparisons, curriculum rewards, property-based parser fuzzing, and constrained JSON decoding as a separately measured intervention.
+Future work includes reward and prompt changes that improve answer correctness rather than formatting alone, equation-solving via an explicit symbolic schema, additional independently held-out datasets, multi-seed confidence intervals and bootstrap comparisons, explicit non-finite-gradient guards, curriculum rewards, property-based parser fuzzing, and constrained JSON decoding as a separately measured intervention.
 
 ## Résumé-ready description
 

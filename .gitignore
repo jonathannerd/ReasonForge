@@ -16,6 +16,8 @@ outputs/
 checkpoints/
 results/*
 !results/.gitkeep
+!results/first-gpu-run/
+!results/first-gpu-run/**
 wandb/
 build/
 dist/

@@ -1,0 +1,166 @@
+{
+  "aligned": {
+    "successful": [],
+    "failed": [
+      {
+        "model": "aligned",
+        "source_split": "test",
+        "source_index": 30,
+        "question": "Darrell and Allen's ages are in the ratio of 7:11. If their total age now is 162, calculate Allen's age 10 years from now.",
+        "reference_answer": "109",
+        "response": "{\"method\": \"simple division\", \"calculations\": [{\"expression\": \"total_age = (7/11) * 162\", \"result\": \"108.90909090909091\"}, {\"expression\": \"Allen_age_10_years_later = total_age - 10\", \"result\": \"98.90909090909091\"}]}, \"final_answer\": \"98.90909090909091\"}",
+        "json_valid": false,
+        "schema_valid": false,
+        "answer_correct": false,
+        "calculation_validity_rate": 0.0,
+        "final_consistent": false,
+        "response_length": 253,
+        "failure_reason": "schema error at final_answer: Field required",
+        "failure_categories": [
+          "schema_violation"
+        ],
+        "reward_schema": 0.25,
+        "reward_answer_correctness": 0.0,
+        "reward_calculation_validity": 0.0,
+        "reward_final_consistency": 0.0,
+        "reward_conciseness": 0.0,
+        "reward_suspicious_penalty": 0.0,
+        "reward_total": 0.25
+      },
+      {
+        "model": "aligned",
+        "source_split": "test",
+        "source_index": 754,
+        "question": "Lorraine and Colleen are trading stickers for buttons. Each large sticker is worth a large button or three small buttons. A small sticker is worth one small button. A large button is worth three small stickers. Lorraine starts with 30 small stickers and 40 large stickers. She trades 90% of her small stickers for large buttons. She trades 50% of her large stickers for large buttons and trades the rest of them for small buttons. How many buttons does she have by the end?",
+        "reference_answer": "89",
+        "response": "{\"method\": \"short method label\", \"calculations\": [{\"expression\": \"small stickers traded for large buttons = 90%\", \"result\": \"27\"}, {\"expression\": \"large stickers traded for large buttons = 50%\", \"result\": \"18\"}, {\"expression\": \"buttons from large buttons = (3 * 18) + (3 * 27)\", \"result\": \"162\"}, {\"expression\": \"buttons from small buttons = 40\", \"result\": \"40\"}], \"final_answer\": \"162\"}",
+        "json_valid": true,
+        "schema_valid": true,
+        "answer_correct": false,
+        "calculation_validity_rate": 0.0,
+        "final_consistent": false,
+        "response_length": 387,
+        "failure_reason": "wrong_answer, invalid_calculation, inconsistent_final",
+        "failure_categories": [
+          "wrong_answer",
+          "invalid_calculation",
+          "inconsistent_final"
+        ],
+        "reward_schema": 1.0,
+        "reward_answer_correctness": 0.0,
+        "reward_calculation_validity": 0.0,
+        "reward_final_consistency": 0.0,
+        "reward_conciseness": 0.0,
+        "reward_suspicious_penalty": 0.0,
+        "reward_total": 1.0
+      },
+      {
+        "model": "aligned",
+        "source_split": "test",
+        "source_index": 429,
+        "question": "Indras has 6 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?",
+        "reference_answer": "13",
+        "response": "{\"method\": \"long method\", \"calculations\": [{\"expression\": \"half of Indras' name length = (6/2)\", \"result\": \"3\"}, {\"expression\": \"Indras' sister's name length = 3 + 4\", \"result\": \"7\"}], \"final_answer\": \"10\"}",
+        "json_valid": true,
+        "schema_valid": true,
+        "answer_correct": false,
+        "calculation_validity_rate": 0.0,
+        "final_consistent": false,
+        "response_length": 206,
+        "failure_reason": "wrong_answer, invalid_calculation, inconsistent_final",
+        "failure_categories": [
+          "wrong_answer",
+          "invalid_calculation",
+          "inconsistent_final"
+        ],
+        "reward_schema": 1.0,
+        "reward_answer_correctness": 0.0,
+        "reward_calculation_validity": 0.0,
+        "reward_final_consistency": 0.0,
+        "reward_conciseness": 0.0,
+        "reward_suspicious_penalty": 0.0,
+        "reward_total": 1.0
+      }
+    ]
+  },
+  "base": {
+    "successful": [],
+    "failed": [
+      {
+        "model": "base",
+        "source_split": "test",
+        "source_index": 30,
+        "question": "Darrell and Allen's ages are in the ratio of 7:11. If their total age now is 162, calculate Allen's age 10 years from now.",
+        "reference_answer": "109",
+        "response": "To find Allen's age 10 years from now, we first need to determine Darrell's current age based on the given ratio and total age.\n\nThe ratio of Darrell's and Allen's ages is 7:11. This means for every 7 parts Darrell has, Allen has 11 parts. Therefore, the total number of parts (which represents all their ages combined) is \\(7 + 11 = 18\\) parts.\n\nGiven that their total age is 162, each part corresponds to \\(\\frac{162}{18} = 9\\) years.\n\nNow, we can calculate Darrell's current age by multiplying his share of the total age by the number of parts he has:\n\n\\[ \\text{Darrell's current age} = 9 \\times 7 = 63 \\]\n\nNext, we calculate Allen's current age by subtracting Darrell's current age",
+        "json_valid": false,
+        "schema_valid": false,
+        "answer_correct": false,
+        "calculation_validity_rate": 0.0,
+        "final_consistent": false,
+        "response_length": 685,
+        "failure_reason": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+        "failure_categories": [
+          "invalid_json"
+        ],
+        "reward_schema": 0.0,
+        "reward_answer_correctness": 0.0,
+        "reward_calculation_validity": 0.0,
+        "reward_final_consistency": 0.0,
+        "reward_conciseness": 0.0,
+        "reward_suspicious_penalty": 0.0,
+        "reward_total": 0.0
+      },
+      {
+        "model": "base",
+        "source_split": "test",
+        "source_index": 754,
+        "question": "Lorraine and Colleen are trading stickers for buttons. Each large sticker is worth a large button or three small buttons. A small sticker is worth one small button. A large button is worth three small stickers. Lorraine starts with 30 small stickers and 40 large stickers. She trades 90% of her small stickers for large buttons. She trades 50% of her large stickers for large buttons and trades the rest of them for small buttons. How many buttons does she have by the end?",
+        "reference_answer": "89",
+        "response": "To determine how many buttons Lorraine has by the end, we need to follow these steps:\n\n1. Calculate the number of small stickers traded.\n2. Determine the number of large buttons Lorraine gets from the trade.\n3. Calculate the total number of large buttons after the trade.\n4. Determine the number of small buttons traded.\n5. Calculate the total number of small buttons after the trade.\n\n**Step 1: Calculate the number of small stickers traded.**\nLorraine starts with 30 small stickers and trades 90% of them.\n\\[ \\text{Number of small stickers traded} = 30 \\times 0.90 = 27 \\]\n\n**Step 2: Determine the number of large buttons Lorraine gets from the trade.**\nEach large sticker is worth a large button or three small buttons. Since she trades 90% of her small stickers for large buttons, she will get:\n\\[ \\",
+        "json_valid": false,
+        "schema_valid": false,
+        "answer_correct": false,
+        "calculation_validity_rate": 0.0,
+        "final_consistent": false,
+        "response_length": 803,
+        "failure_reason": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+        "failure_categories": [
+          "invalid_json"
+        ],
+        "reward_schema": 0.0,
+        "reward_answer_correctness": 0.0,
+        "reward_calculation_validity": 0.0,
+        "reward_final_consistency": 0.0,
+        "reward_conciseness": 0.0,
+        "reward_suspicious_penalty": 0.0,
+        "reward_total": 0.0
+      },
+      {
+        "model": "base",
+        "source_split": "test",
+        "source_index": 429,
+        "question": "Indras has 6 letters in her name. Her sister's name has 4 more letters than half of the letters in Indras' name. How many letters are in Indras and her sister's names?",
+        "reference_answer": "13",
+        "response": "To determine the total number of letters in Indras' and her sister's names, we need to follow these steps:\n\n1. Identify the number of letters in Indras' name.\n2. Calculate half the number of letters in Indras' name.\n3. Add 4 to half the number of letters in Indras' name.\n\nLet's denote the number of letters in Indras' name as \\( I \\). According to the problem, \\( I = 6 \\).\n\nNext, we calculate half the number of letters in Indras' name:\n\\[ \\frac{I}{2} = \\frac{6}{2} = 3 \\]\n\nThen, we add 4 to this value to find the total number of letters in both names:\n\\[ I + \\left(\\frac{I}{2}\\right) = 6 + 3 = 9 \\]\n\nTherefore, the total number of letters in Indras' and her sister",
+        "json_valid": false,
+        "schema_valid": false,
+        "answer_correct": false,
+        "calculation_validity_rate": 0.0,
+        "final_consistent": false,
+        "response_length": 668,
+        "failure_reason": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+        "failure_categories": [
+          "invalid_json"
+        ],
+        "reward_schema": 0.0,
+        "reward_answer_correctness": 0.0,
+        "reward_calculation_validity": 0.0,
+        "reward_final_consistency": 0.0,
+        "reward_conciseness": 0.0,
+        "reward_suspicious_penalty": 0.0,
+        "reward_total": 0.0
+      }
+    ]
+  }
+}
