@@ -1,12 +1,6 @@
 # ReasonForge
 
-> **Status: First GPU run complete (August 4, 2026).** A 100-step GRPO/LoRA run finished on a Tesla T4 and was evaluated against the base model on 32 paired held-out GSM8K examples. Both models scored 0/32 answer accuracy, so no accuracy improvement is claimed. All 42 CPU-safe engineering tests and release checks pass.
-
-ReasonForge is a small-model reinforcement-learning sandbox for a deliberately narrow claim: can GRPO post-training make a 0.5B instruction model produce concise, machine-verifiable arithmetic solutions more reliably? It trains `Qwen/Qwen2.5-0.5B-Instruct` with LoRA on GSM8K prompts and rewards structured JSON, exact arithmetic, reference-answer correctness, and consistency between the final calculation and answer.
-
-The project is an original implementation inspired conceptually by the idea of a GRPO alignment sandbox. It does not reuse code or repository structure from the unlicensed reference project.
-
-> ReasonForge verifies supported calculations and final numeric answers. It does **not** verify unrestricted natural-language reasoning, a model's hidden chain of thought, or mathematical expressions outside its restricted arithmetic language.
+ReasonForge is a reinforcement-learning sandbox for the claim: can GRPO post-training make a 0.5B instruction model produce concise, machine-verifiable arithmetic solutions more reliably? It trains `Qwen/Qwen2.5-0.5B-Instruct` with LoRA on GSM8K prompts and rewards structured JSON, exact arithmetic, reference-answer correctness, and consistency between the final calculation and answer.
 
 ## How it works
 
@@ -199,25 +193,6 @@ results/                 Other generated evaluation artifacts (ignored by Git)
 pyproject.toml            Package metadata, pins, lint/test configuration
 requirements-colab.txt   Colab dependency lock
 ```
-
-## Limitations and scientific caveats
-
-- GSM8K final answers are scalar numeric values. Equations with free symbols, geometry, units requiring conversion logic, matrices, and arbitrary functions are out of scope.
-- A valid calculation trace is evidence that the displayed arithmetic is self-consistent; it is not proof of the model's causal or hidden reasoning process.
-- Reward functions are specifications and can have blind spots. Adversarial tests reduce obvious reward hacking but do not prove robustness.
-- The first paired evaluation measured 0/32 answer accuracy for both models. Its formatting gains are useful engineering evidence, not a mathematical-performance improvement.
-- The first run used one seed and one small 32-example evaluation subset, without confidence intervals. It is exploratory and too small for broad statistical claims.
-- One of 100 logged gradient norms was `NaN` at step 10, although the loss stayed finite and the next 90 gradient norms were finite. Future runs should add explicit non-finite-gradient monitoring and compare optimizer/precision settings.
-- Small subset experiments have high variance. Report seeds, sample counts, confidence intervals, decoding settings, and failed runs before drawing performance conclusions.
-- Training on a benchmark can overfit its style. The held-out split prevents direct row leakage, not distributional contamination inherited from pretraining.
-- Generated text remains untrusted. Do not broaden the verifier by adding general code execution.
-- Arithmetic accuracy is not a basis for high-stakes financial, medical, legal, or safety decisions.
-
-Future work includes reward and prompt changes that improve answer correctness rather than formatting alone, equation-solving via an explicit symbolic schema, additional independently held-out datasets, multi-seed confidence intervals and bootstrap comparisons, explicit non-finite-gradient guards, curriculum rewards, property-based parser fuzzing, and constrained JSON decoding as a separately measured intervention.
-
-## Résumé-ready description
-
-Built ReasonForge, an original GRPO/LoRA post-training sandbox for Qwen2.5-0.5B with a restricted AST-to-SymPy verifier, configurable component rewards, leakage-aware GSM8K evaluation, adversarial CPU tests, reproducible Colab training, comparison plots, and a lazy Gradio inspection app.
 
 ## License
 
