@@ -3,13 +3,7 @@
 ReasonForge is an end-to-end post-training project for small language models that solve arithmetic
 word problems as concise, machine-verifiable JSON. It fine-tunes
 `Qwen/Qwen2.5-0.5B-Instruct` with a structured-output SFT warm start, then continues the same LoRA
-adapter with Group Relative Policy Optimization (GRPO). Evaluation deliberately separates
-mathematical accuracy from formatting compliance so a correct answer is not mislabeled merely
-because its JSON is imperfect.
-
-> **Résumé-ready:** Built a reproducible SFT→GRPO LoRA pipeline for a 0.5B language model with
-> leakage-safe GSM8K preparation, symbolic arithmetic verification, group-level reward diagnostics,
-> three-model evaluation with confidence intervals, and an interactive Gradio inspection app.
+adapter with Group Relative Policy Optimization (GRPO).
 
 ## Pipeline
 
@@ -257,23 +251,6 @@ results/first-gpu-run/             Immutable v1 measured artifacts
 results/v1-reanalysis/             Separate 64-row v1 diagnostic pass
 results/sft-grpo-final/            V2 raw rows, plots, CIs, lineage, and training diagnostics
 ```
-
-## Limitations and future improvements
-
-- GSM8K and a 0.5B model test a narrow arithmetic setting; results do not establish broader
-  reasoning ability or correctness of unobserved chain-of-thought.
-- The verifier checks only emitted arithmetic and answer equivalence. The short `method` label and
-  natural-language problem interpretation are not formally proven.
-- SFT targets inherit coverage limits and occasional rejected annotations from GSM8K.
-- GRPO can have all-incorrect or equal-reward groups. Diagnostics expose this, but more diverse
-  prompts, adaptive curricula, or larger models may provide stronger learning signal.
-- V2 is a single-seed, 128-example comparison. Its SFT and SFT+GRPO Wilson intervals overlap, so
-  the four-answer observed gain needs multi-seed replication and a larger paired evaluation.
-- v1 truncation is heuristic because finish metadata was not saved; v2 corrects this at generation
-  time.
-- Future work includes multi-seed runs, larger held-out samples, contamination audits beyond split
-  provenance, stronger symbolic problem representations, and comparison with merged/full-parameter
-  baselines.
 
 ## License
 
