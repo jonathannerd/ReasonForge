@@ -1,0 +1,26 @@
+{
+  "created_at": "2026-08-05T03:36:24.926281+00:00",
+  "paired_examples": 128,
+  "models": [
+    "base",
+    "sft",
+    "sft_grpo"
+  ],
+  "confidence_intervals": "two-sided 95% Wilson score intervals",
+  "raw_text_authority": "per_example.jsonl",
+  "csv_embedded_newlines": "escaped as the two characters \\n",
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_adapters": {
+    "base": null,
+    "sft": "outputs/sft-adapter",
+    "sft_grpo": "outputs/sft-grpo-adapter"
+  },
+  "source_dataset": "openai/gsm8k",
+  "source_split": "test",
+  "generation_settings": {
+    "max_new_tokens": 256,
+    "temperature": 0.0,
+    "top_p": 0.95,
+    "seed": 42
+  }
+}

@@ -58,7 +58,7 @@ def test_update_readme_uses_only_supplied_real_metrics(tmp_path: Path) -> None:
     }
     update_readme_results(readme, metrics)
     updated = readme.read_text(encoding="utf-8")
-    assert "| base | 10.0% | 5.0% | 20.0% | 30.0% | 40.0% | 50.0% | 2.0% | 1.250 |" in updated
+    assert "| Base | 10.0% | 5.0% | 20.0% | 30.0% | 40.0% | 50.0% | 2.0% | 1.250 |" in updated
     assert updated.startswith("before") and updated.endswith("after\n")
     assert json.dumps(metrics) not in updated
 

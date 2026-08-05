@@ -122,7 +122,7 @@ python -m reasonforge.train --config configs/grpo.yaml
 ```
 
 The meaningful defaults are 100 SFT steps over up to 1,024 validated targets, followed by 200
-GRPO steps over 512 prompts with four generations per group. The independently loadable artifacts
+GRPO steps over 512 prompts with eight generations per group. The independently loadable artifacts
 are `outputs/sft-adapter` and `outputs/sft-grpo-adapter`. Resume either trainer with `--resume` or a
 specific checkpoint path. Model weights, adapters, checkpoints, caches, and datasets are ignored
 by Git.
@@ -180,12 +180,38 @@ Because v1 did not store token finish reasons, its truncation counts are explici
 
 ### v2: SFT → GRPO
 
-The implementation and CPU validation are complete. The GPU smoke, meaningful SFT/GRPO, and
-128-example three-model evaluation are in progress; no v2 GPU metrics are claimed yet.
+The implementation, smoke gates, meaningful training, and paired evaluation are complete on one
+Tesla T4 with seed 42. A first FP16 SFT trial produced a non-finite first-step gradient and was
+rejected. The accepted FP32 SFT run completed 100 steps in 343.6 seconds with train loss 0.2752,
+final evaluation loss 0.2162, and zero non-finite events across 105 logged records. The subsequent
+FP16 GRPO continuation completed 200 steps in 1,823.1 seconds with train loss 0.0564 and zero
+non-finite events across 201 logged records.
+
+On 128 paired held-out examples, math accuracy was 12/128 for base (9.4%, Wilson 95% CI
+5.4–15.7%), 21/128 for SFT (16.4%, 11.0–23.8%), and 25/128 for SFT+GRPO (19.5%, 13.6–27.2%).
+Strict end-to-end passes were 0, 21, and 23. SFT+GRPO also reached 99.2% JSON validity and reduced
+token-level truncation from 44.5% for base and 3.1% for SFT to 0.8%. The SFT and SFT+GRPO
+confidence intervals overlap, so the observed four-answer GRPO gain is evidence from this run,
+not a claim of a statistically established improvement.
 
 <!-- RESULTS:START -->
-V2 GPU evaluation pending; no metrics are reported.
+| Model | Math accuracy | Strict E2E | JSON valid | Schema | Calc validity | Consistency | Truncated | Avg reward |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Base | 9.4% | 0.0% | 11.7% | 3.9% | 0.8% | 0.0% | 44.5% | 0.543 |
+| SFT | 16.4% | 16.4% | 96.1% | 96.1% | 83.7% | 81.2% | 3.1% | 4.757 |
+| SFT + GRPO | 19.5% | 18.0% | 99.2% | 98.4% | 87.5% | 88.3% | 0.8% | 5.135 |
 <!-- RESULTS:END -->
+
+The 200 GRPO groups contained at least one correct completion in 129 groups; 71 were all incorrect
+and eight were all correct. Mean total-reward variance was 4.506, mean unique generations was
+6.48/8, ten groups had zero total-reward variance, and one of 1,600 sampled completions was flagged
+likely truncated. Full raw rows, trainer diagnostics, lineage metadata, and plots are published in
+[`results/sft-grpo-final/`](results/sft-grpo-final/).
+
+![V2 held-out comparison](results/sft-grpo-final/model_comparison.png)
+
+[Failure categories](results/sft-grpo-final/failure_categories.png) ·
+[Reward components](results/sft-grpo-final/reward_components.png)
 
 ## Gradio application
 
@@ -229,7 +255,7 @@ src/reasonforge/                   Data, schemas, verification, rewards, trainin
 tests/                             CPU-only unit, adversarial, and regression tests
 results/first-gpu-run/             Immutable v1 measured artifacts
 results/v1-reanalysis/             Separate 64-row v1 diagnostic pass
-results/sft-grpo-final/            Allowlisted v2 measured artifacts after a real run
+results/sft-grpo-final/            V2 raw rows, plots, CIs, lineage, and training diagnostics
 ```
 
 ## Limitations and future improvements
@@ -241,6 +267,8 @@ results/sft-grpo-final/            Allowlisted v2 measured artifacts after a rea
 - SFT targets inherit coverage limits and occasional rejected annotations from GSM8K.
 - GRPO can have all-incorrect or equal-reward groups. Diagnostics expose this, but more diverse
   prompts, adaptive curricula, or larger models may provide stronger learning signal.
+- V2 is a single-seed, 128-example comparison. Its SFT and SFT+GRPO Wilson intervals overlap, so
+  the four-answer observed gain needs multi-seed replication and a larger paired evaluation.
 - v1 truncation is heuristic because finish metadata was not saved; v2 corrects this at generation
   time.
 - Future work includes multi-seed runs, larger held-out samples, contamination audits beyond split

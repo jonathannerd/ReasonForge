@@ -2,7 +2,7 @@ import pytest
 
 from reasonforge.config import ConfigurationError
 from reasonforge.sft import resolve_sft_training
-from reasonforge.training_diagnostics import TrainingHealthCallback
+from reasonforge.training_diagnostics import TrainerCallback, TrainingHealthCallback
 
 
 def test_sft_smoke_overrides_are_explicit() -> None:
@@ -37,8 +37,11 @@ def test_sft_config_requires_explicit_stability_bounds() -> None:
 
 def test_health_callback_preserves_nonfinite_evidence(tmp_path) -> None:
     callback = TrainingHealthCallback(tmp_path / "health.json")
+    assert isinstance(callback, TrainerCallback)
     state = type("State", (), {"global_step": 3})()
     callback.on_log(None, state, None, {"loss": float("nan"), "grad_norm": 1.25})
     summary = callback.summary()
     assert summary["nonfinite_event_count"] == 1
+    assert summary["nonfinite_loss_count"] == 1
+    assert summary["nonfinite_gradient_norm_count"] == 0
     assert summary["finite_metric_ranges"]["grad_norm"]["maximum"] == 1.25

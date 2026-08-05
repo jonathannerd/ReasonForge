@@ -274,6 +274,8 @@ def train(
         "python": platform.python_version(),
         "cuda_available": torch.cuda.is_available(),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        "precision": "fp16" if use_fp16 else "fp32",
+        "fp16_enabled": use_fp16,
         "versions": {
             name: _package_version(name)
             for name in ("torch", "transformers", "datasets", "trl", "peft", "sympy")

@@ -23,6 +23,8 @@ from reasonforge.verifier import verify_completion
 
 LOGGER = logging.getLogger(__name__)
 
+MODEL_DISPLAY_NAMES = {"base": "Base", "sft": "SFT", "sft_grpo": "SFT + GRPO"}
+
 
 def wilson_interval(successes: int, count: int, z: float = 1.959963984540054) -> dict[str, float]:
     """Return a two-sided 95% Wilson interval as percentages."""
@@ -184,7 +186,16 @@ def _write_artifacts(
         }
         for row in rows
     ]
-    pd.DataFrame(serializable).to_csv(output_dir / "per_example.csv", index=False)
+    csv_serializable = [
+        {
+            key: value.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
+            if isinstance(value, str)
+            else value
+            for key, value in row.items()
+        }
+        for row in serializable
+    ]
+    pd.DataFrame(csv_serializable).to_csv(output_dir / "per_example.csv", index=False)
     with (output_dir / "per_example.jsonl").open("w", encoding="utf-8") as handle:
         for row in rows:
             handle.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
@@ -220,6 +231,8 @@ def _write_artifacts(
         "paired_examples": len(rows) // len(grouped),
         "models": list(grouped),
         "confidence_intervals": "two-sided 95% Wilson score intervals",
+        "raw_text_authority": "per_example.jsonl",
+        "csv_embedded_newlines": "escaped as the two characters \\n",
         **dict(manifest or {}),
     }
     (output_dir / "evaluation_manifest.json").write_text(
@@ -253,7 +266,7 @@ def update_readme_results(
             "{json_validity_percentage:.1f}% | {schema_compliance_percentage:.1f}% | "
             "{calculation_validity_rate:.1f}% | {final_consistency_percentage:.1f}% | "
             "{truncation_rate:.1f}% | {average_total_reward:.3f} |".format(
-                name=model_name, **values
+                name=MODEL_DISPLAY_NAMES.get(model_name, model_name), **values
             )
         )
     replacement = start_marker + "\n" + "\n".join(lines) + "\n" + end_marker

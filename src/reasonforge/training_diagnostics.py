@@ -8,8 +8,15 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+try:
+    from transformers import TrainerCallback
+except ImportError:  # Minimal CPU CI intentionally does not install Transformers.
 
-class TrainingHealthCallback:
+    class TrainerCallback:  # type: ignore[no-redef]
+        """Import-safe fallback supplying no lifecycle hooks in CPU-only tests."""
+
+
+class TrainingHealthCallback(TrainerCallback):
     """Collect Trainer logs without filtering NaN/Inf evidence."""
 
     def __init__(self, output_path: str | Path) -> None:
@@ -39,6 +46,12 @@ class TrainingHealthCallback:
         return {
             "logged_steps": len(self.logs),
             "nonfinite_event_count": len(self.nonfinite_events),
+            "nonfinite_loss_count": sum(
+                event["metric"] in {"loss", "eval_loss"} for event in self.nonfinite_events
+            ),
+            "nonfinite_gradient_norm_count": sum(
+                event["metric"] == "grad_norm" for event in self.nonfinite_events
+            ),
             "nonfinite_events": self.nonfinite_events,
             "finite_metric_ranges": {
                 key: {"minimum": min(values), "maximum": max(values), "last": values[-1]}

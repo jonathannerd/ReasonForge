@@ -67,7 +67,14 @@ else:
     subprocess.run(["git", "-C", str(PROJECT_DIR), "switch", BRANCH], check=True)
 os.chdir(PROJECT_DIR)
 %pip install -q -r requirements-colab.txt
+# Colab preinstalls vision/audio wheels for a newer Torch release. ReasonForge
+# is text-only, so remove those incompatible optional packages before importing
+# Transformers/PEFT.
+%pip uninstall -y torchvision torchaudio
 %pip install -q -e . pytest==8.4.2 ruff==0.13.1
+# Colab's already-running kernel does not always reload a newly created
+# editable-install .pth file; make this checked-out source tree explicit.
+sys.path.insert(0, str(PROJECT_DIR / "src"))
 print("Commit:", subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip())
 """
     ),
@@ -114,7 +121,7 @@ assert prepared.manifest["train_validation_overlap"] == 0
         """
 ## 5. GPU smoke test: structured-output SFT
 
-**GPU-expensive (short):** four optimizer steps. This validates mixed precision, LoRA saving,
+**GPU-expensive (short):** four optimizer steps. This validates T4 execution, LoRA saving,
 evaluation loss, checkpointing, and the independently loadable SFT artifact.
 """
     ),
@@ -143,6 +150,7 @@ sft_smoke_meta = json.loads((sft_smoke / "run_metadata.json").read_text())
 sft_smoke_health = json.loads((sft_smoke / "training_health.json").read_text())
 print(json.dumps({"metadata": sft_smoke_meta, "health": sft_smoke_health}, indent=2))
 assert sft_smoke_meta["stage"] == "sft"
+assert sft_smoke_meta["precision"] == "fp32"
 assert sft_smoke_health["nonfinite_event_count"] == 0
 """
     ),
@@ -152,7 +160,9 @@ assert sft_smoke_health["nonfinite_event_count"] == 0
 
 **GPU-expensive:** the checked-in configuration uses 1,024 validated targets and 100 steps.
 It saves to `outputs/sft-adapter`, separate from the smoke artifact. Resume with `--resume` after
-an interruption.
+an interruption. SFT intentionally uses FP32 on the 0.5B model: a T4 FP16 trial produced a
+non-finite first-step gradient and was rejected by the health gate. GRPO retains FP16 because
+grouped generation is substantially more memory intensive.
 """
     ),
     code(
@@ -162,7 +172,9 @@ subprocess.run(
 )
 sft_adapter = Path("outputs/sft-adapter")
 assert (sft_adapter / "adapter_config.json").is_file()
+sft_meta = json.loads((sft_adapter / "run_metadata.json").read_text())
 sft_health = json.loads((sft_adapter / "training_health.json").read_text())
+assert sft_meta["precision"] == "fp32", sft_meta
 assert sft_health["nonfinite_event_count"] == 0, sft_health
 print(json.dumps(sft_health, indent=2))
 """
@@ -233,6 +245,8 @@ assert (grpo_adapter / "adapter_config.json").is_file()
 assert json.loads((grpo_adapter / "initialization_assertion.json").read_text())["passed"]
 final_health = json.loads((grpo_adapter / "training_health.json").read_text())
 final_reward_diag = json.loads((grpo_adapter / "reward_diagnostics.json").read_text())
+final_meta = json.loads((grpo_adapter / "run_metadata.json").read_text())
+assert final_meta["precision"] == "fp16", final_meta
 assert final_health["nonfinite_event_count"] == 0, final_health
 print(json.dumps({"health": final_health, "reward": final_reward_diag}, indent=2))
 """

@@ -6,6 +6,12 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+MODEL_DISPLAY_NAMES = {"base": "Base", "sft": "SFT", "sft_grpo": "SFT + GRPO"}
+
+
+def _model_label(name: str) -> str:
+    return MODEL_DISPLAY_NAMES.get(name, name)
+
 
 def _plotting() -> tuple[Any, Any, Any]:
     try:
@@ -31,7 +37,11 @@ def plot_comparison(metrics: Mapping[str, Mapping[str, Any]], output_path: str |
         "truncation_rate",
     ]
     rows = [
-        {"model": model_name, "metric": metric.replace("_", " "), "value": values[metric]}
+        {
+            "model": _model_label(model_name),
+            "metric": metric.replace("_", " "),
+            "value": values[metric],
+        }
         for model_name, values in metrics.items()
         for metric in percentage_metrics
     ]
@@ -50,7 +60,7 @@ def plot_failures(metrics: Mapping[str, Mapping[str, Any]], output_path: str | P
     """Save primary failure categories across all evaluated models."""
     plt, pd, sns = _plotting()
     rows = [
-        {"model": model_name, "category": category.replace("_", " "), "count": count}
+        {"model": _model_label(model_name), "category": category.replace("_", " "), "count": count}
         for model_name, values in metrics.items()
         for category, count in values.get("failure_categories", {}).items()
     ]
@@ -81,7 +91,7 @@ def plot_reward_components(
     ]
     rows = [
         {
-            "model": model_name,
+            "model": _model_label(model_name),
             "component": key.removeprefix("average_reward_").replace("_", " "),
             "value": values[key],
         }

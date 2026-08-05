@@ -79,7 +79,7 @@ def train_sft(
             selected = self.train_dataset if train_dataset is None else train_dataset
             return SequentialSampler(selected)
 
-    use_fp16 = bool(torch.cuda.is_available())
+    use_fp16 = bool(torch.cuda.is_available() and settings.get("fp16", False))
     optimizer = str(settings.get("optimizer", "adamw_torch"))
     args = SFTConfig(
         output_dir=str(output_dir),
@@ -158,6 +158,8 @@ def train_sft(
         "python": platform.python_version(),
         "cuda_available": torch.cuda.is_available(),
         "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        "precision": "fp16" if use_fp16 else "fp32",
+        "fp16_enabled": use_fp16,
         "versions": {
             name: _package_version(name)
             for name in ("torch", "transformers", "datasets", "trl", "peft", "sympy")

@@ -1,0 +1,117 @@
+{
+  "base": {
+    "examples": 128,
+    "math_accuracy": 9.375,
+    "math_accuracy_wilson_95": {
+      "lower_percentage": 5.444380439914703,
+      "upper_percentage": 15.672997257307856,
+      "confidence_level": 0.95,
+      "method": "Wilson score interval"
+    },
+    "strict_end_to_end_accuracy": 0.0,
+    "strict_end_to_end_wilson_95": {
+      "lower_percentage": 0.0,
+      "upper_percentage": 2.9136956273508416,
+      "confidence_level": 0.95,
+      "method": "Wilson score interval"
+    },
+    "json_validity_percentage": 11.71875,
+    "schema_compliance_percentage": 3.90625,
+    "calculation_validity_rate": 0.78125,
+    "final_consistency_percentage": 0.0,
+    "truncation_rate": 44.53125,
+    "average_total_reward": 0.54296875,
+    "average_reward_schema": 0.05859375,
+    "average_reward_answer_correctness": 0.46875,
+    "average_reward_calculation_validity": 0.015625,
+    "average_reward_final_consistency": 0.0,
+    "average_reward_conciseness": 0.0078125,
+    "average_reward_suspicious_penalty": -0.0078125,
+    "average_response_length": 684.84375,
+    "average_completion_tokens": 202.9140625,
+    "failure_categories": {
+      "correct_math_invalid_json": 12,
+      "mathematically_wrong": 59,
+      "truncated": 57
+    },
+    "final_answer_accuracy": 9.375,
+    "valid_json_percentage": 11.71875
+  },
+  "sft": {
+    "examples": 128,
+    "math_accuracy": 16.40625,
+    "math_accuracy_wilson_95": {
+      "lower_percentage": 10.988331645919331,
+      "upper_percentage": 23.781807603707016,
+      "confidence_level": 0.95,
+      "method": "Wilson score interval"
+    },
+    "strict_end_to_end_accuracy": 16.40625,
+    "strict_end_to_end_wilson_95": {
+      "lower_percentage": 10.988331645919331,
+      "upper_percentage": 23.781807603707016,
+      "confidence_level": 0.95,
+      "method": "Wilson score interval"
+    },
+    "json_validity_percentage": 96.09375,
+    "schema_compliance_percentage": 96.09375,
+    "calculation_validity_rate": 83.73387896825398,
+    "final_consistency_percentage": 81.25,
+    "truncation_rate": 3.125,
+    "average_total_reward": 4.756708829365079,
+    "average_reward_schema": 0.9609375,
+    "average_reward_answer_correctness": 0.8203125,
+    "average_reward_calculation_validity": 1.6746775793650794,
+    "average_reward_final_consistency": 1.21875,
+    "average_reward_conciseness": 0.08203125,
+    "average_reward_suspicious_penalty": 0.0,
+    "average_response_length": 231.796875,
+    "average_completion_tokens": 81.046875,
+    "failure_categories": {
+      "mathematically_wrong": 103,
+      "passed_strict_end_to_end": 21,
+      "truncated": 4
+    },
+    "final_answer_accuracy": 16.40625,
+    "valid_json_percentage": 96.09375
+  },
+  "sft_grpo": {
+    "examples": 128,
+    "math_accuracy": 19.53125,
+    "math_accuracy_wilson_95": {
+      "lower_percentage": 13.59396128283779,
+      "upper_percentage": 27.244071990079128,
+      "confidence_level": 0.95,
+      "method": "Wilson score interval"
+    },
+    "strict_end_to_end_accuracy": 17.96875,
+    "strict_end_to_end_wilson_95": {
+      "lower_percentage": 12.282459974516051,
+      "upper_percentage": 25.521626286755584,
+      "confidence_level": 0.95,
+      "method": "Wilson score interval"
+    },
+    "json_validity_percentage": 99.21875,
+    "schema_compliance_percentage": 98.4375,
+    "calculation_validity_rate": 87.52604166666667,
+    "final_consistency_percentage": 88.28125,
+    "truncation_rate": 0.78125,
+    "average_total_reward": 5.135286458333334,
+    "average_reward_schema": 0.986328125,
+    "average_reward_answer_correctness": 0.9765625,
+    "average_reward_calculation_validity": 1.7505208333333333,
+    "average_reward_final_consistency": 1.32421875,
+    "average_reward_conciseness": 0.09765625,
+    "average_reward_suspicious_penalty": 0.0,
+    "average_response_length": 189.4296875,
+    "average_completion_tokens": 62.3125,
+    "failure_categories": {
+      "correct_math_invalid_calculation": 2,
+      "mathematically_wrong": 102,
+      "passed_strict_end_to_end": 23,
+      "truncated": 1
+    },
+    "final_answer_accuracy": 19.53125,
+    "valid_json_percentage": 99.21875
+  }
+}

@@ -49,6 +49,7 @@ class RewardDiagnosticsCollector:
             end = start + self.num_generations
             group_scores = scores[start:end]
             correctness = [float(score.answer_correctness > 0) for score in group_scores]
+            correctness_rewards = [float(score.answer_correctness) for score in group_scores]
             totals = [float(score.total) for score in group_scores]
             structure = [
                 float(score.schema_score + score.calculation_validity + score.final_consistency)
@@ -62,7 +63,9 @@ class RewardDiagnosticsCollector:
                     "all_incorrect": not any(correctness),
                     "all_correct": all(correctness),
                     "correctness_variance": pvariance(correctness),
+                    "mean_correctness_reward": mean(correctness_rewards),
                     "total_reward_variance": pvariance(totals),
+                    "total_reward_stddev": math.sqrt(pvariance(totals)),
                     "mean_total_reward": mean(totals),
                     "mean_structure_reward": mean(structure),
                     "unique_generations": len(set(texts)),
@@ -84,23 +87,50 @@ class RewardDiagnosticsCollector:
         def group_count(key: str) -> int:
             return sum(bool(group[key]) for group in self.groups)
 
+        completion_count = count * self.num_generations
+        correct_completion_count = sum(int(group["correct_completions"]) for group in self.groups)
+        groups_with_any_correct = count - group_count("all_incorrect")
+        all_incorrect_groups = group_count("all_incorrect")
+        zero_correctness_variance_groups = sum(
+            float(group["correctness_variance"]) == 0.0 for group in self.groups
+        )
+        zero_total_reward_variance_groups = sum(
+            float(group["total_reward_variance"]) == 0.0 for group in self.groups
+        )
+        likely_truncated_completions = sum(
+            int(group["likely_truncated_completions"]) for group in self.groups
+        )
         return {
             "groups": count,
             "num_generations": self.num_generations,
-            "groups_with_any_correct": count - group_count("all_incorrect"),
-            "all_incorrect_groups": group_count("all_incorrect"),
+            "completion_count": completion_count,
+            "correct_completion_count": correct_completion_count,
+            "correct_completion_rate": 100.0 * correct_completion_count / completion_count,
+            "groups_with_any_correct": groups_with_any_correct,
+            "groups_with_any_correct_percentage": 100.0 * groups_with_any_correct / count,
+            "all_incorrect_groups": all_incorrect_groups,
+            "all_incorrect_group_percentage": 100.0 * all_incorrect_groups / count,
             "all_correct_groups": group_count("all_correct"),
-            "zero_correctness_variance_groups": sum(
-                float(group["correctness_variance"]) == 0.0 for group in self.groups
-            ),
-            "zero_total_reward_variance_groups": sum(
-                float(group["total_reward_variance"]) == 0.0 for group in self.groups
+            "zero_correctness_variance_groups": zero_correctness_variance_groups,
+            "zero_correctness_variance_percentage": 100.0
+            * zero_correctness_variance_groups
+            / count,
+            "zero_total_reward_variance_groups": zero_total_reward_variance_groups,
+            "zero_total_reward_variance_percentage": 100.0
+            * zero_total_reward_variance_groups
+            / count,
+            "mean_correctness_reward": mean(
+                float(group["mean_correctness_reward"]) for group in self.groups
             ),
             "mean_correctness_variance": mean(
                 float(group["correctness_variance"]) for group in self.groups
             ),
+            "mean_total_reward": mean(float(group["mean_total_reward"]) for group in self.groups),
             "mean_total_reward_variance": mean(
                 float(group["total_reward_variance"]) for group in self.groups
+            ),
+            "mean_group_total_reward_stddev": mean(
+                float(group["total_reward_stddev"]) for group in self.groups
             ),
             "mean_structure_reward": mean(
                 float(group["mean_structure_reward"]) for group in self.groups
@@ -108,9 +138,8 @@ class RewardDiagnosticsCollector:
             "mean_unique_generations": mean(
                 int(group["unique_generations"]) for group in self.groups
             ),
-            "likely_truncated_completions": sum(
-                int(group["likely_truncated_completions"]) for group in self.groups
-            ),
+            "likely_truncated_completions": likely_truncated_completions,
+            "truncated_completion_rate": 100.0 * likely_truncated_completions / completion_count,
             "per_group": self.groups,
         }
 
