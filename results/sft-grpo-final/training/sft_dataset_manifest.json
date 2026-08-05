@@ -1,0 +1,35 @@
+{
+  "source_dataset": "openai/gsm8k",
+  "source_splits_used": [
+    "train"
+  ],
+  "official_test_examples_used": 0,
+  "seed": 42,
+  "max_curriculum_stage": 4,
+  "train_examples": 1024,
+  "validation_examples": 128,
+  "train_stage_counts": {
+    "fractions_percent_equations": 124,
+    "multi_step_reasoning": 700,
+    "one_step_word_problem": 184,
+    "simple_arithmetic": 16
+  },
+  "validation_stage_counts": {
+    "fractions_percent_equations": 15,
+    "multi_step_reasoning": 83,
+    "one_step_word_problem": 27,
+    "simple_arithmetic": 3
+  },
+  "rejections": {
+    "train": {
+      "last verified annotation is inconsistent with the final answer": 44,
+      "worked answer contains no verifiable calculation annotations": 7
+    },
+    "validation": {
+      "last verified annotation is inconsistent with the final answer": 7,
+      "worked answer contains no verifiable calculation annotations": 2
+    }
+  },
+  "fingerprint_sha256": "3d4cf5aff126b8d963927d0fae3352e9dbdd87cffaf4d68deeeb43f9206e70a8",
+  "train_validation_overlap": 0
+}

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "reasonforge"
-version = "0.1.0"
-description = "A GRPO and LoRA sandbox for verifiable structured math responses"
+version = "0.2.0"
+description = "A structured-math SFT and GRPO LoRA pipeline with independent verification"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = { file = "LICENSE" }
@@ -37,9 +37,11 @@ dev = [
 
 [project.scripts]
 reasonforge-dataset = "reasonforge.dataset:main"
+reasonforge-sft = "reasonforge.sft:main"
 reasonforge-train = "reasonforge.train:main"
 reasonforge-evaluate = "reasonforge.evaluate:main"
 reasonforge-app = "reasonforge.app:main"
+reasonforge-reanalyze-v1 = "reasonforge.reanalysis:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/reasonforge"]

@@ -1,0 +1,24 @@
+{
+  "derivation": "Counts derived from the complete nonfinite_events arrays in the saved health artifacts",
+  "sft": {
+    "logged_records": 105,
+    "nonfinite_event_count": 0,
+    "nonfinite_loss_count": 0,
+    "nonfinite_gradient_norm_count": 0,
+    "gradient_norm_minimum": 0.979382336139679,
+    "gradient_norm_maximum": 22.37456703186035,
+    "gradient_norm_last": 1.2676751613616943,
+    "optimizer_overflow_skips_detected": null
+  },
+  "grpo": {
+    "logged_records": 201,
+    "nonfinite_event_count": 0,
+    "nonfinite_loss_count": 0,
+    "nonfinite_gradient_norm_count": 0,
+    "gradient_norm_minimum": 0.005772362928837538,
+    "gradient_norm_maximum": 2.779275417327881,
+    "gradient_norm_last": 1.2106728553771973,
+    "optimizer_overflow_skips_detected": null
+  },
+  "overflow_caveat": "The pinned Trainer callback API does not expose AMP overflow skips reliably; null is retained rather than inferred."
+}

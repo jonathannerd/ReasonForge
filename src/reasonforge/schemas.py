@@ -58,6 +58,17 @@ class CalculationCheck(BaseModel):
     reason: str | None = None
 
 
+class AnswerExtraction(BaseModel):
+    """Conservative final-answer extraction independent of JSON compliance."""
+
+    raw_answer: str | None = None
+    normalized_answer: str | None = None
+    source: str | None = None
+    confidence: str | None = None
+    ambiguous: bool = False
+    reason: str | None = None
+
+
 class VerificationResult(BaseModel):
     """Auditable verification result; no hidden reasoning is claimed."""
 
@@ -65,10 +76,14 @@ class VerificationResult(BaseModel):
     reference_answer: str
     normalized_reference: str | None = None
     normalized_final_answer: str | None = None
+    extraction: AnswerExtraction = Field(default_factory=AnswerExtraction)
+    math_accuracy: bool = False
     answer_correct: bool = False
     calculation_checks: list[CalculationCheck] = Field(default_factory=list)
     calculation_validity_rate: float = 0.0
     final_consistent: bool = False
+    strict_end_to_end: bool = False
+    truncated: bool = False
     failure_reason: str | None = None
     failure_categories: list[str] = Field(default_factory=list)
 

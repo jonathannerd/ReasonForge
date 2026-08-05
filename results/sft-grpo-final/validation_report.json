@@ -1,0 +1,48 @@
+{
+  "evaluation_created_at": "2026-08-05T03:36:24.926281+00:00",
+  "validation_scope": "Independent local recomputation from per_example.jsonl and saved training metadata",
+  "checks": {
+    "jsonl_rows": 384,
+    "csv_rows": 384,
+    "models": 3,
+    "paired_examples_per_model": 128,
+    "paired_source_indices_identical": true,
+    "questions_and_references_identical_within_pairs": true,
+    "duplicate_model_source_rows": 0,
+    "aggregate_percentages_recomputed": true,
+    "wilson_intervals_recomputed": true,
+    "reward_component_sums_recomputed": true,
+    "failure_counts_recomputed": true,
+    "finish_reason_and_truncation_consistent": true,
+    "all_json_numbers_finite": true,
+    "sft_grpo_lineage_verified": true,
+    "official_test_examples_used_for_sft": 0,
+    "sft_train_validation_overlap": 0,
+    "model_weight_files_present": false,
+    "local_user_paths_present": false,
+    "obvious_secret_patterns_present": false
+  },
+  "counts": {
+    "base": {"math_correct": 12, "strict_end_to_end": 0, "truncated": 57},
+    "sft": {"math_correct": 21, "strict_end_to_end": 21, "truncated": 4},
+    "sft_grpo": {"math_correct": 25, "strict_end_to_end": 23, "truncated": 1}
+  },
+  "training": {
+    "sft_logged_records": 105,
+    "sft_nonfinite_events": 0,
+    "grpo_logged_records": 201,
+    "grpo_nonfinite_events": 0,
+    "grpo_groups": 200,
+    "grpo_generations_per_group": 8,
+    "grpo_groups_with_any_correct": 129,
+    "grpo_all_incorrect_groups": 71,
+    "grpo_zero_total_reward_variance_groups": 10,
+    "grpo_likely_truncated_completions": 1
+  },
+  "sha256": {
+    "per_example_jsonl": "00beeea36befdf777bf9f8028eb9aaa4e5987aee087e2c6e3f7822fa12657b86",
+    "per_example_csv": "b8b13f108cad1fbbe4688502c35598a07c74a3acb8ec4085137cd87072a6ec03",
+    "sft_dataset_fingerprint": "3d4cf5aff126b8d963927d0fae3352e9dbdd87cffaf4d68deeeb43f9206e70a8",
+    "source_sft_adapter_fingerprint": "f38b362d302b5d5f1469819e9511458553b083ad162e8a426aa58d6eeb1d0d30"
+  }
+}

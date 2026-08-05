@@ -1,0 +1,128 @@
+{
+  "created_at": "2026-08-05T03:00:44.698427+00:00",
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "stage": "grpo",
+  "initialization": {
+    "passed": true,
+    "mode": "sft_adapter_continuation",
+    "source": {
+      "path": "outputs/sft-adapter",
+      "fingerprint_sha256": "f38b362d302b5d5f1469819e9511458553b083ad162e8a426aa58d6eeb1d0d30",
+      "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+      "stage": "sft",
+      "dataset_fingerprint_sha256": "3d4cf5aff126b8d963927d0fae3352e9dbdd87cffaf4d68deeeb43f9206e70a8"
+    },
+    "trainable_parameters": 8798208,
+    "output_is_separate": true
+  },
+  "seed": 42,
+  "fallback": false,
+  "smoke": false,
+  "train_metrics": {
+    "train_runtime": 1823.1477,
+    "train_samples_per_second": 0.878,
+    "train_steps_per_second": 0.11,
+    "total_flos": 0.0,
+    "train_loss": 0.056403576834127306
+  },
+  "python": "3.12.13",
+  "cuda_available": true,
+  "gpu": "Tesla T4",
+  "versions": {
+    "torch": "2.8.0",
+    "transformers": "4.57.6",
+    "datasets": "4.5.0",
+    "trl": "0.24.0",
+    "peft": "0.17.1",
+    "sympy": "1.14.0"
+  },
+  "config": {
+    "seed": 42,
+    "model": {
+      "id": "Qwen/Qwen2.5-0.5B-Instruct"
+    },
+    "initialization": {
+      "mode": "sft_adapter",
+      "sft_adapter_path": "outputs/sft-adapter"
+    },
+    "dataset": {
+      "name": "openai/gsm8k",
+      "validation_fraction": 0.1,
+      "train_size": 512,
+      "validation_size": 128,
+      "test_size": 128,
+      "prepared_path": "outputs/grpo-dataset"
+    },
+    "curriculum": {
+      "enabled": true,
+      "max_stage": 4,
+      "shuffle_dataset": false
+    },
+    "training": {
+      "output_dir": "outputs/sft-grpo-adapter",
+      "run_name": "reasonforge-qwen-0.5b-sft-grpo",
+      "per_device_train_batch_size": 1,
+      "gradient_accumulation_steps": 8,
+      "num_generations": 8,
+      "max_prompt_length": 512,
+      "max_completion_length": 256,
+      "learning_rate": 5e-06,
+      "num_train_epochs": 1,
+      "max_steps": 200,
+      "warmup_ratio": 0.05,
+      "max_grad_norm": 0.5,
+      "logging_steps": 1,
+      "save_steps": 50,
+      "save_total_limit": 2,
+      "gradient_checkpointing": true,
+      "optimizer": "auto",
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "beta": 0.04,
+      "loss_type": "dapo",
+      "mask_truncated_completions": true,
+      "report_to": "none",
+      "log_completions": false
+    },
+    "fallback": {
+      "num_generations": 2,
+      "gradient_accumulation_steps": 2,
+      "max_completion_length": 192
+    },
+    "smoke": {
+      "dataset": {
+        "train_size": 32,
+        "validation_size": 8,
+        "test_size": 8
+      },
+      "training": {
+        "output_dir": "outputs/sft-grpo-smoke-adapter",
+        "run_name": "reasonforge-sft-grpo-smoke",
+        "max_steps": 4,
+        "save_steps": 4
+      }
+    },
+    "lora": {
+      "rank": 16,
+      "alpha": 32,
+      "dropout": 0.05,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ]
+    },
+    "rewards": {
+      "schema": 1.0,
+      "answer_correctness": 5.0,
+      "calculation_validity": 2.0,
+      "final_consistency": 1.5,
+      "conciseness": 0.5,
+      "suspicious_penalty": -1.0
+    }
+  }
+}

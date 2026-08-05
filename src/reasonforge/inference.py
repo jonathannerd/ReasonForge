@@ -22,6 +22,29 @@ class GenerationSettings:
     seed: int = 42
 
 
+@dataclass(frozen=True)
+class GenerationResult:
+    """Generated text with exact token-level stopping metadata."""
+
+    text: str
+    completion_tokens: int
+    truncated: bool
+    finish_reason: str
+
+
+def generation_finish_metadata(
+    token_ids: list[int], *, max_new_tokens: int, eos_token_ids: set[int]
+) -> tuple[bool, str]:
+    """Classify an observed token sequence without decoding heuristics."""
+    ended_with_eos = bool(token_ids and token_ids[-1] in eos_token_ids)
+    truncated = len(token_ids) >= max_new_tokens and not ended_with_eos
+    if ended_with_eos:
+        return False, "eos_token"
+    if truncated:
+        return True, "max_new_tokens"
+    return False, "generation_stopped"
+
+
 class LazyModelRunner:
     """Load a base model (and optional LoRA adapter) only on first generation."""
 
@@ -79,6 +102,10 @@ class LazyModelRunner:
 
     def generate(self, problem: str, settings: GenerationSettings) -> str:
         """Generate the assistant continuation for one math problem."""
+        return self.generate_result(problem, settings).text
+
+    def generate_result(self, problem: str, settings: GenerationSettings) -> GenerationResult:
+        """Generate one response and retain exact finish/truncation evidence."""
         if not problem.strip():
             raise ValueError("Problem cannot be empty")
         if not 1 <= settings.max_new_tokens <= 1024:
@@ -114,4 +141,22 @@ class LazyModelRunner:
         with torch.inference_mode():
             output_ids = model.generate(**inputs, **generation_kwargs)
         new_tokens = output_ids[0, inputs["input_ids"].shape[1] :]
-        return str(tokenizer.decode(new_tokens, skip_special_tokens=True)).strip()
+        token_ids = [int(value) for value in new_tokens.tolist()]
+        configured_eos = tokenizer.eos_token_id
+        if isinstance(configured_eos, int):
+            eos_ids = {configured_eos}
+        elif configured_eos is None:
+            eos_ids = set()
+        else:
+            eos_ids = {int(value) for value in configured_eos}
+        truncated, finish_reason = generation_finish_metadata(
+            token_ids,
+            max_new_tokens=settings.max_new_tokens,
+            eos_token_ids=eos_ids,
+        )
+        return GenerationResult(
+            text=str(tokenizer.decode(new_tokens, skip_special_tokens=True)).strip(),
+            completion_tokens=len(token_ids),
+            truncated=truncated,
+            finish_reason=finish_reason,
+        )

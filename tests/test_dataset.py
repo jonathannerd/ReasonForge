@@ -26,6 +26,7 @@ def test_dataset_formatting_preserves_source_and_prompt() -> None:
     assert record["question"] == "What is 12 * 5?"
     assert record["reference_answer"] == "60"
     assert record["source_index"] == 7
+    assert 1 <= record["curriculum_stage"] <= 4
     assert record["prompt"] == [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": "What is 12 * 5?"},
@@ -57,4 +58,6 @@ def test_dataset_record_rejects_invalid_chat_roles() -> None:
             reference_answer="4",
             source_split="train",
             source_index=0,
+            curriculum_stage=1,
+            curriculum_name="simple_arithmetic",
         )

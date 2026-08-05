@@ -1,0 +1,29 @@
+{
+  "logged_steps": 105,
+  "nonfinite_event_count": 0,
+  "nonfinite_events": [],
+  "finite_metric_ranges": {
+    "eval_loss": {
+      "minimum": 0.21619415283203125,
+      "maximum": 0.2909492254257202,
+      "last": 0.21619415283203125
+    },
+    "grad_norm": {
+      "minimum": 0.979382336139679,
+      "maximum": 22.37456703186035,
+      "last": 1.2676751613616943
+    },
+    "learning_rate": {
+      "minimum": 0.0,
+      "maximum": 2e-05,
+      "last": 2.105263157894737e-07
+    },
+    "loss": {
+      "minimum": 0.0898,
+      "maximum": 1.4831,
+      "last": 0.2169
+    }
+  },
+  "optimizer_overflow_skips_detected": null,
+  "optimizer_overflow_note": "The pinned Trainer stack does not expose AMP overflow skips in callback logs; this field is null rather than inferred."
+}

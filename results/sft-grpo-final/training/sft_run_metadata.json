@@ -1,0 +1,49 @@
+{
+  "created_at": "2026-08-05T02:23:43.386848+00:00",
+  "stage": "sft",
+  "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+  "output_dir": "outputs/sft-adapter",
+  "seed": 42,
+  "smoke": false,
+  "train_metrics": {
+    "train_runtime": 343.5938,
+    "train_samples_per_second": 2.328,
+    "train_steps_per_second": 0.291,
+    "total_flos": 425188783395840.0,
+    "train_loss": 0.2752170788496733,
+    "epoch": 0.78125
+  },
+  "dataset_fingerprint_sha256": "3d4cf5aff126b8d963927d0fae3352e9dbdd87cffaf4d68deeeb43f9206e70a8",
+  "python": "3.12.13",
+  "cuda_available": true,
+  "gpu": "Tesla T4",
+  "versions": {
+    "torch": "2.8.0",
+    "transformers": "4.57.6",
+    "datasets": "4.5.0",
+    "trl": "0.24.0",
+    "peft": "0.17.1",
+    "sympy": "1.14.0"
+  },
+  "resolved_sft": {
+    "output_dir": "outputs/sft-adapter",
+    "run_name": "reasonforge-qwen-0.5b-sft",
+    "train_size": 1024,
+    "validation_size": 128,
+    "per_device_train_batch_size": 2,
+    "per_device_eval_batch_size": 2,
+    "gradient_accumulation_steps": 4,
+    "max_length": 512,
+    "learning_rate": 2e-05,
+    "max_steps": 100,
+    "warmup_ratio": 0.05,
+    "max_grad_norm": 0.5,
+    "logging_steps": 1,
+    "eval_steps": 25,
+    "save_steps": 25,
+    "save_total_limit": 2,
+    "gradient_checkpointing": true,
+    "optimizer": "adamw_torch",
+    "report_to": "none"
+  }
+}

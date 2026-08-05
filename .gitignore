@@ -18,6 +18,10 @@ results/*
 !results/.gitkeep
 !results/first-gpu-run/
 !results/first-gpu-run/**
+!results/v1-reanalysis/
+!results/v1-reanalysis/**
+!results/sft-grpo-final/
+!results/sft-grpo-final/**
 wandb/
 build/
 dist/
