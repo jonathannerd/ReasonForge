@@ -48,16 +48,16 @@ print("CUDA device:", torch.cuda.get_device_name(0))
     ),
     markdown(
         """
-## 2. Clone the feature branch and install the pinned stack
+## 2. Clone the released repository and install the pinned stack
 
-The default URL is the public ReasonForge repository. Set `BRANCH = "main"` after the pull
-request is merged. Re-running this cell updates an existing clean checkout instead of nesting it.
+The default URL and branch use the released public ReasonForge repository. Re-running this cell
+updates an existing clean checkout instead of nesting it.
 """
     ),
     code(
         """
 REPO_URL = "https://github.com/jonathannerd/ReasonForge.git"
-BRANCH = "agent/sft-grpo-final"
+BRANCH = "main"
 PROJECT_DIR = Path("/content/ReasonForge")
 
 if not PROJECT_DIR.exists():
