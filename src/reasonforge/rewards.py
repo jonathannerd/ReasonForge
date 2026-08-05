@@ -6,11 +6,12 @@ import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache
+from statistics import mean, pvariance
 from typing import Any
 
 from reasonforge.parsing import completion_to_text
 from reasonforge.schemas import RewardBreakdown
-from reasonforge.verifier import verify_completion
+from reasonforge.verifier import likely_truncated_text, verify_completion
 
 DEFAULT_REWARD_WEIGHTS: dict[str, float] = {
     "schema": 1.0,
@@ -25,6 +26,93 @@ _SUSPICIOUS_RE = re.compile(
     r"(?:__|import\b|eval\s*\(|exec\s*\(|subprocess|os\.|system\s*\(|<script)",
     re.IGNORECASE,
 )
+
+
+class RewardDiagnosticsCollector:
+    """Aggregate the group-level learning signal GRPO actually observes."""
+
+    def __init__(self, num_generations: int) -> None:
+        if num_generations < 2:
+            raise ValueError("Reward diagnostics require at least two generations")
+        self.num_generations = num_generations
+        self.groups: list[dict[str, Any]] = []
+
+    def record(
+        self,
+        completions: Sequence[object],
+        references: Sequence[str],
+        scores: Sequence[RewardBreakdown],
+    ) -> None:
+        if len(completions) % self.num_generations:
+            raise ValueError("Completion count must be divisible by num_generations")
+        for start in range(0, len(completions), self.num_generations):
+            end = start + self.num_generations
+            group_scores = scores[start:end]
+            correctness = [float(score.answer_correctness > 0) for score in group_scores]
+            totals = [float(score.total) for score in group_scores]
+            structure = [
+                float(score.schema_score + score.calculation_validity + score.final_consistency)
+                for score in group_scores
+            ]
+            texts = [completion_to_text(value) for value in completions[start:end]]
+            self.groups.append(
+                {
+                    "reference_answer": references[start],
+                    "correct_completions": int(sum(correctness)),
+                    "all_incorrect": not any(correctness),
+                    "all_correct": all(correctness),
+                    "correctness_variance": pvariance(correctness),
+                    "total_reward_variance": pvariance(totals),
+                    "mean_total_reward": mean(totals),
+                    "mean_structure_reward": mean(structure),
+                    "unique_generations": len(set(texts)),
+                    "likely_truncated_completions": sum(
+                        likely_truncated_text(text) for text in texts
+                    ),
+                }
+            )
+
+    def summary(self) -> dict[str, Any]:
+        count = len(self.groups)
+        if not count:
+            return {
+                "groups": 0,
+                "num_generations": self.num_generations,
+                "note": "No reward groups were observed.",
+            }
+
+        def group_count(key: str) -> int:
+            return sum(bool(group[key]) for group in self.groups)
+
+        return {
+            "groups": count,
+            "num_generations": self.num_generations,
+            "groups_with_any_correct": count - group_count("all_incorrect"),
+            "all_incorrect_groups": group_count("all_incorrect"),
+            "all_correct_groups": group_count("all_correct"),
+            "zero_correctness_variance_groups": sum(
+                float(group["correctness_variance"]) == 0.0 for group in self.groups
+            ),
+            "zero_total_reward_variance_groups": sum(
+                float(group["total_reward_variance"]) == 0.0 for group in self.groups
+            ),
+            "mean_correctness_variance": mean(
+                float(group["correctness_variance"]) for group in self.groups
+            ),
+            "mean_total_reward_variance": mean(
+                float(group["total_reward_variance"]) for group in self.groups
+            ),
+            "mean_structure_reward": mean(
+                float(group["mean_structure_reward"]) for group in self.groups
+            ),
+            "mean_unique_generations": mean(
+                int(group["unique_generations"]) for group in self.groups
+            ),
+            "likely_truncated_completions": sum(
+                int(group["likely_truncated_completions"]) for group in self.groups
+            ),
+            "per_group": self.groups,
+        }
 
 
 def _finite(value: float) -> float:
@@ -98,6 +186,8 @@ def _component_reward(
     component: str,
     weights: Mapping[str, float] | None = None,
     scorer: Callable[[object, str], RewardBreakdown] | None = None,
+    observer: Callable[[Sequence[object], Sequence[str], Sequence[RewardBreakdown]], None]
+    | None = None,
 ) -> Callable[..., list[float]]:
     """Create a named reward callable so TRL logs each component separately."""
 
@@ -107,10 +197,13 @@ def _component_reward(
         score = scorer or (
             lambda completion, reference: score_completion(completion, reference, weights)
         )
-        values = [
-            getattr(score(completion, reference), attribute)
+        scored = [
+            score(completion, reference)
             for completion, reference in zip(completions, references, strict=True)
         ]
+        if observer is not None:
+            observer(completions, references, scored)
+        values = [getattr(value, attribute) for value in scored]
         return [_finite(value) for value in values]
 
     reward.__name__ = f"{component}_reward"
@@ -127,6 +220,7 @@ def _component_reward(
 
 def build_reward_functions(
     weights: Mapping[str, float] | None = None,
+    diagnostics: RewardDiagnosticsCollector | None = None,
 ) -> list[Callable[..., list[float]]]:
     """Return separately named reward functions accepted by TRL ``GRPOTrainer``."""
 
@@ -138,7 +232,12 @@ def build_reward_functions(
         return cached_score(completion_to_text(completion), reference_answer)
 
     return [
-        _component_reward(component, weights, scorer)
+        _component_reward(
+            component,
+            weights,
+            scorer,
+            diagnostics.record if diagnostics is not None and component == "schema" else None,
+        )
         for component in (
             "schema",
             "answer_correctness",

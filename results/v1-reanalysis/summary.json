@@ -1,0 +1,75 @@
+{
+  "source_file": "results/first-gpu-run/per_example.jsonl",
+  "source_rows": 64,
+  "regenerated_completions": false,
+  "truncation_note": "v1 rows did not save token-level finish reasons; likely_truncated is a conservative text-structure heuristic and is reported separately from exact v2 finish metadata.",
+  "metrics": {
+    "aligned": {
+      "examples": 32,
+      "math_correct": 0,
+      "math_accuracy_percentage": 0.0,
+      "strict_end_to_end_correct": 0,
+      "strict_end_to_end_percentage": 0.0,
+      "json_valid": 26,
+      "schema_compliant": 13,
+      "likely_truncated": 5,
+      "formatting_or_schema_rejected_correct_answer": 0,
+      "parsing_failed": 6,
+      "schema_failed": 13,
+      "valid_calculations_incorrect_final": 2,
+      "mathematically_wrong": 32,
+      "primary_diagnostics": {
+        "likely_truncated": 5,
+        "mathematically_wrong": 11,
+        "parsing_failed": 1,
+        "schema_failed": 13,
+        "valid_calculations_incorrect_final": 2
+      }
+    },
+    "base": {
+      "examples": 32,
+      "math_correct": 1,
+      "math_accuracy_percentage": 3.125,
+      "strict_end_to_end_correct": 0,
+      "strict_end_to_end_percentage": 0.0,
+      "json_valid": 3,
+      "schema_compliant": 1,
+      "likely_truncated": 8,
+      "formatting_or_schema_rejected_correct_answer": 1,
+      "parsing_failed": 29,
+      "schema_failed": 2,
+      "valid_calculations_incorrect_final": 0,
+      "mathematically_wrong": 31,
+      "primary_diagnostics": {
+        "formatting_or_schema_rejected_correct_answer": 1,
+        "likely_truncated": 8,
+        "mathematically_wrong": 1,
+        "parsing_failed": 20,
+        "schema_failed": 2
+      }
+    },
+    "overall": {
+      "examples": 64,
+      "math_correct": 1,
+      "math_accuracy_percentage": 1.5625,
+      "strict_end_to_end_correct": 0,
+      "strict_end_to_end_percentage": 0.0,
+      "json_valid": 29,
+      "schema_compliant": 14,
+      "likely_truncated": 13,
+      "formatting_or_schema_rejected_correct_answer": 1,
+      "parsing_failed": 35,
+      "schema_failed": 15,
+      "valid_calculations_incorrect_final": 2,
+      "mathematically_wrong": 63,
+      "primary_diagnostics": {
+        "formatting_or_schema_rejected_correct_answer": 1,
+        "likely_truncated": 13,
+        "mathematically_wrong": 12,
+        "parsing_failed": 21,
+        "schema_failed": 15,
+        "valid_calculations_incorrect_final": 2
+      }
+    }
+  }
+}

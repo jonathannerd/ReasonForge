@@ -12,7 +12,7 @@ from dataclasses import dataclass
 import sympy
 
 from reasonforge.parsing import parse_completion
-from reasonforge.schemas import CalculationCheck, VerificationResult
+from reasonforge.schemas import AnswerExtraction, CalculationCheck, VerificationResult
 
 MAX_EXPRESSION_CHARS = 128
 MAX_AST_NODES = 64
@@ -23,6 +23,17 @@ MAX_ABS_RESULT = sympy.Integer(10) ** 100
 _ALLOWED_RE = re.compile(r"^[0-9+\-*/().%^\s]+$")
 _COMMA_NUMBER_RE = re.compile(r"(?<=\d),(?=\d{3}(?:\D|$))")
 _CURRENCY_RE = re.compile(r"(?:USD|CAD|EUR|GBP|dollars?|euros?|pounds?)", re.IGNORECASE)
+_HEDGING_RE = re.compile(r"\b(?:maybe|perhaps|probably|possibly|guess|unsure)\b", re.IGNORECASE)
+_EXPLICIT_ANSWER_PATTERNS = (
+    re.compile(r"####\s*(?P<answer>[^\n\r]+)", re.IGNORECASE),
+    re.compile(
+        r"(?:final\s+answer|the\s+answer|answer)\s*(?:is|equals|=|:)\s*"
+        r"(?P<answer>[^\n\r]+)",
+        re.IGNORECASE,
+    ),
+)
+_BOXED_RE = re.compile(r"\\boxed\s*\{(?P<answer>[^{}]+)\}", re.IGNORECASE)
+_FINAL_TAG_RE = re.compile(r"<final>\s*(?P<answer>.*?)\s*</final>", re.IGNORECASE | re.DOTALL)
 
 
 class UnsafeExpressionError(ValueError):
@@ -147,7 +158,112 @@ def mathematically_equivalent(left: str, right: str) -> bool:
         return False
 
 
-def verify_completion(completion: object, reference_answer: str) -> VerificationResult:
+def _try_answer_candidate(candidate: str) -> tuple[str, NormalizedValue] | None:
+    cleaned = candidate.strip().strip("`*\"'")
+    cleaned = cleaned.rstrip(". ;,\t")
+    try:
+        return cleaned, normalize_answer(cleaned)
+    except UnsafeExpressionError:
+        return None
+
+
+def extract_final_answer(completion: object) -> AnswerExtraction:
+    """Extract a supported numeric answer without depending on schema success.
+
+    The ordered policy is intentionally conservative: a numeric ``final_answer``
+    JSON field, an explicit final-answer delimiter, a concise numeric response,
+    or an otherwise unambiguous numeric final line. Arbitrary prose is never
+    searched for a reference-looking number.
+    """
+    parsed = parse_completion(completion)
+    if parsed.data is not None and "final_answer" in parsed.data:
+        value = parsed.data["final_answer"]
+        if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+            candidate = _try_answer_candidate(str(value))
+            if candidate is not None:
+                raw, normalized = candidate
+                return AnswerExtraction(
+                    raw_answer=raw,
+                    normalized_answer=normalized.text,
+                    source="json_final_answer",
+                    confidence="high" if parsed.schema_valid else "medium",
+                )
+
+    text = parsed.raw_text.strip()
+    for source, pattern in (
+        ("boxed_expression", _BOXED_RE),
+        ("final_tag", _FINAL_TAG_RE),
+    ):
+        matches = list(pattern.finditer(text))
+        if matches:
+            candidate = _try_answer_candidate(matches[-1].group("answer"))
+            if candidate is not None:
+                raw, normalized = candidate
+                return AnswerExtraction(
+                    raw_answer=raw,
+                    normalized_answer=normalized.text,
+                    source=source,
+                    confidence="high",
+                )
+
+    for pattern in _EXPLICIT_ANSWER_PATTERNS:
+        matches = list(pattern.finditer(text))
+        if not matches:
+            continue
+        match = matches[-1]
+        if _HEDGING_RE.search(text[max(0, match.start() - 32) : match.start()]):
+            continue
+        candidate = _try_answer_candidate(match.group("answer"))
+        if candidate is not None:
+            raw, normalized = candidate
+            return AnswerExtraction(
+                raw_answer=raw,
+                normalized_answer=normalized.text,
+                source="explicit_answer_marker",
+                confidence="high",
+            )
+
+    candidate = _try_answer_candidate(text)
+    if candidate is not None:
+        raw, normalized = candidate
+        return AnswerExtraction(
+            raw_answer=raw,
+            normalized_answer=normalized.text,
+            source="concise_numeric_response",
+            confidence="high",
+        )
+
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if lines:
+        last = lines[-1]
+        terminal = last[1:].strip() if last.startswith("=") else last
+        candidate = _try_answer_candidate(terminal)
+        if candidate is not None:
+            raw, normalized = candidate
+            return AnswerExtraction(
+                raw_answer=raw,
+                normalized_answer=normalized.text,
+                source="unambiguous_final_line",
+                confidence="medium",
+            )
+    return AnswerExtraction(reason="no conservative final-answer candidate")
+
+
+def likely_truncated_text(completion: object) -> bool:
+    """Flag obvious cutoffs when generation token metadata is unavailable."""
+    text = parse_completion(completion).raw_text.rstrip()
+    if not text:
+        return False
+    if text.count("{") > text.count("}") or text.count("[") > text.count("]"):
+        return True
+    if text.count('"') % 2:
+        return True
+    return bool(re.search(r"(?:[,+:=+\-*/]|\\|\b(?:and|or|the|a|to|is))\s*$", text, re.I))
+
+
+def verify_completion(
+    completion: object, reference_answer: str, *, truncated: bool = False
+) -> VerificationResult:
     """Verify schema, reference answer, calculations, and final-step consistency."""
     parsed = parse_completion(completion)
     categories: list[str] = []
@@ -172,34 +288,29 @@ def verify_completion(completion: object, reference_answer: str) -> Verification
         parse=parsed,
         reference_answer=reference_answer,
         normalized_reference=reference.text,
+        truncated=truncated,
         failure_categories=categories,
     )
+    extraction = extract_final_answer(completion)
+    result.extraction = extraction
+    final_value = None
+    if extraction.normalized_answer is not None:
+        final_value = normalize_answer(extraction.normalized_answer)
+        result.normalized_final_answer = final_value.text
+        result.math_accuracy = bool(sympy.cancel(final_value.value - reference.value) == 0)
+        result.answer_correct = result.math_accuracy
+    else:
+        result.failure_categories.append("answer_not_extracted")
+
     solution = parsed.solution
     if solution is None:
-        # Give mathematics its deserved dominance only for a completion that is
-        # itself a concise supported answer, never by fishing numbers from prose.
-        try:
-            raw_value = normalize_answer(parsed.raw_text)
-        except UnsafeExpressionError:
-            result.failure_reason = parsed.error or "no verifiable final answer"
-            return result
-        result.normalized_final_answer = raw_value.text
-        result.answer_correct = bool(sympy.cancel(raw_value.value - reference.value) == 0)
-        if not result.answer_correct:
+        if not result.math_accuracy:
             result.failure_categories.append("wrong_answer")
-            result.failure_reason = parsed.error or "final answer is not equivalent to reference"
-        elif result.failure_categories:
+        if truncated:
+            result.failure_categories.append("truncated")
+        if result.failure_categories:
             result.failure_reason = parsed.error or ", ".join(result.failure_categories)
         return result
-
-    try:
-        final_value = normalize_answer(solution.final_answer)
-        result.normalized_final_answer = final_value.text
-        result.answer_correct = bool(sympy.cancel(final_value.value - reference.value) == 0)
-    except UnsafeExpressionError as exc:
-        final_value = None
-        result.failure_reason = f"unsupported final answer: {exc}"
-        result.failure_categories.append("unsupported_answer")
 
     for index, calculation in enumerate(solution.calculations):
         check = CalculationCheck(
@@ -228,12 +339,23 @@ def verify_completion(completion: object, reference_answer: str) -> Verification
                 last_check.normalized_claimed_result, final_value.text
             )
 
-    if not result.answer_correct:
+    if not result.math_accuracy:
         result.failure_categories.append("wrong_answer")
     if result.calculation_validity_rate < 1.0:
         result.failure_categories.append("invalid_calculation")
     if not result.final_consistent:
         result.failure_categories.append("inconsistent_final")
+    if truncated:
+        result.failure_categories.append("truncated")
+    result.strict_end_to_end = bool(
+        result.math_accuracy
+        and parsed.json_valid
+        and parsed.exact_json
+        and parsed.schema_valid
+        and result.calculation_validity_rate == 1.0
+        and result.final_consistent
+        and not truncated
+    )
     if result.failure_categories and result.failure_reason is None:
         result.failure_reason = ", ".join(result.failure_categories)
     return result

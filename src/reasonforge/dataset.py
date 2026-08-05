@@ -14,6 +14,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from reasonforge.config import ConfigurationError, load_yaml, require_mapping
+from reasonforge.curriculum import infer_curriculum_stage
 from reasonforge.verifier import UnsafeExpressionError, normalize_answer
 
 LOGGER = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ SYSTEM_PROMPT = """You solve arithmetic and introductory algebra problems. Retur
 Every calculation must be valid. The last calculation result must equal final_answer. Use no variables, functions, code, or unverified explanation."""
 
 _GSM8K_FINAL_RE = re.compile(r"####\s*([^\n\r]+)\s*$")
+_GSM8K_CALC_RE = re.compile(r"<<([^<>]+)>>")
 
 
 class DatasetRecord(BaseModel):
@@ -37,6 +39,8 @@ class DatasetRecord(BaseModel):
     source: str = "gsm8k"
     source_split: str
     source_index: int = Field(ge=0)
+    curriculum_stage: int = Field(ge=1, le=4)
+    curriculum_name: str = Field(min_length=1)
 
     @field_validator("prompt")
     @classmethod
@@ -75,7 +79,14 @@ def format_record(
 ) -> dict[str, Any]:
     """Convert one raw GSM8K example into a validated conversational record."""
     question = str(example.get("question", "")).strip()
-    reference = extract_gsm8k_answer(str(example.get("answer", "")))
+    raw_answer = str(example.get("answer", ""))
+    reference = extract_gsm8k_answer(raw_answer)
+    expressions = [
+        annotation.rsplit("=", 1)[0].strip()
+        for annotation in _GSM8K_CALC_RE.findall(raw_answer)
+        if "=" in annotation
+    ]
+    stage = infer_curriculum_stage(question, expressions)
     record = DatasetRecord(
         prompt=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -85,6 +96,8 @@ def format_record(
         reference_answer=reference,
         source_split=source_split,
         source_index=source_index,
+        curriculum_stage=stage.number,
+        curriculum_name=stage.name,
     )
     return record.model_dump()
 
@@ -127,6 +140,13 @@ def prepare_datasets(config: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(data_config, Mapping):
         raise ConfigurationError("Configuration key 'dataset' must be a mapping")
     seed = int(config.get("seed", 42))
+    curriculum = config.get("curriculum", {})
+    if not isinstance(curriculum, Mapping):
+        raise ConfigurationError("curriculum must be a mapping")
+    curriculum_enabled = bool(curriculum.get("enabled", False))
+    max_stage = int(curriculum.get("max_stage", 4))
+    if not 1 <= max_stage <= 4:
+        raise ConfigurationError("curriculum.max_stage must be between 1 and 4")
     validation_fraction = float(data_config.get("validation_fraction", 0.1))
     if not 0.0 < validation_fraction < 1.0:
         raise ConfigurationError("dataset.validation_fraction must be between 0 and 1")
@@ -157,6 +177,9 @@ def prepare_datasets(config: Mapping[str, Any]) -> dict[str, Any]:
             )
             for example in source_dataset
         ]
+        if curriculum_enabled and split_name == "train":
+            rows = [row for row in rows if int(row["curriculum_stage"]) <= max_stage]
+            rows.sort(key=lambda row: (int(row["curriculum_stage"]), int(row["source_index"])))
         prepared[split_name] = Dataset.from_list(rows)
     return prepared
 

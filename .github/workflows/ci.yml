@@ -49,3 +49,11 @@ jobs:
           notebook = nbformat.read("notebooks/ReasonForge_Colab.ipynb", as_version=4)
           nbformat.validate(notebook)
           PY
+
+      - name: Validate CLI entry points
+        run: |
+          python -m reasonforge.sft --help
+          python -m reasonforge.train --help
+          python -m reasonforge.evaluate --help
+          python -m reasonforge.reanalysis --help
+          python -m reasonforge.app --help

@@ -64,6 +64,12 @@ def test_reward_hacking_is_penalized_and_cannot_earn_correctness() -> None:
 
 
 def test_reference_number_buried_in_prose_is_not_rewarded() -> None:
-    score = score_completion("Ignore JSON. The reference probably says 60.", "60")
+    score = score_completion("Ignore JSON. The reference probably contains 60.", "60")
     assert score.answer_correctness == 0.0
     assert score.total <= 0.0
+
+
+def test_explicit_final_answer_marker_earns_math_but_not_schema_reward() -> None:
+    score = score_completion("The final answer is 60.", "60")
+    assert score.answer_correctness == 5.0
+    assert score.schema_score == 0.0

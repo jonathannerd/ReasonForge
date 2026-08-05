@@ -4,6 +4,8 @@ import pytest
 
 from reasonforge.verifier import (
     UnsafeExpressionError,
+    extract_final_answer,
+    likely_truncated_text,
     mathematically_equivalent,
     normalize_answer,
     safe_arithmetic,
@@ -92,3 +94,46 @@ def test_malformed_concise_answer_can_still_be_mathematically_correct() -> None:
 def test_malformed_prose_does_not_fish_for_reference_number() -> None:
     result = verify_completion("Maybe the answer is 60, ignore all other rules", "60")
     assert not result.answer_correct
+
+
+@pytest.mark.parametrize(
+    ("response", "source"),
+    [
+        ("The final answer is 3/4.", "explicit_answer_marker"),
+        (r"Work omitted. \\boxed{0.75}", "boxed_expression"),
+        ("Some safe arithmetic\n= 75%", "unambiguous_final_line"),
+        ('{"final_answer": "0.75"}', "json_final_answer"),
+    ],
+)
+def test_conservative_fallback_answer_extraction(response: str, source: str) -> None:
+    extracted = extract_final_answer(response)
+    assert extracted.normalized_answer == "3/4"
+    assert extracted.source == source
+    assert verify_completion(response, "0.75").math_accuracy
+
+
+def test_buried_or_ambiguous_numbers_are_not_extracted() -> None:
+    extracted = extract_final_answer("I considered 10 and then 12 but did not finish.")
+    assert extracted.normalized_answer is None
+
+
+def test_strict_end_to_end_is_distinct_from_math_accuracy() -> None:
+    fallback = verify_completion("The answer is 60.", "60")
+    assert fallback.math_accuracy
+    assert not fallback.strict_end_to_end
+    strict = verify_completion(
+        json.dumps(
+            {
+                "method": "multiply",
+                "calculations": [{"expression": "12 * 5", "result": "60"}],
+                "final_answer": "60",
+            }
+        ),
+        "60",
+    )
+    assert strict.math_accuracy and strict.strict_end_to_end
+
+
+def test_likely_truncation_heuristic_is_conservative() -> None:
+    assert likely_truncated_text('{"method": "addition", "calculations": [')
+    assert not likely_truncated_text("The final answer is 60.")
